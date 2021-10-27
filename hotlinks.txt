@@ -1,0 +1,3 @@
+https://stackoverflow.com/questions/64135450/fetching-azure-datafactory-pipelines-run-details
+
+https://docs.microsoft.com/en-us/python/api/azure-mgmt-datafactory/azure.mgmt.datafactory.datafactorymanagementclient?view=azure-python#variables
