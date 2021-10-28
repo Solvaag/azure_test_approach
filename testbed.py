@@ -7,6 +7,16 @@ import subprocess
 import json
 
 
+def developer_validation(file='creds.json'):
+
+
+
+    with open(file, 'r') as creds:
+        data = json.load(creds)
+
+    return data["id"], data["tenantId"]
+
+
 def get_subscriptions():
     subscriptions = json.loads(subprocess.check_output('az account list', shell=True).decode('utf-8'))
 
@@ -20,7 +30,7 @@ def get_specific_subscription(sub_id, subscriptions):
 
 
 def trigger_run():
-    subscription_id = ""
+    subscription_id, tenant_id = developer_validation()
 
     subs = get_subscriptions()
 
@@ -29,7 +39,7 @@ def trigger_run():
     # credentials = ServicePrincipalCredentials(client_id='appid',
     #                                           client_secret='client secret',
     #                                           tenant_id='tenantid')  # To login with serv ppal
-    credentials = InteractiveBrowserCredential(tenant_id=subscription['homeTenantId'])
+    credentials = InteractiveBrowserCredential(tenant_id=tenant_id)
     adf_client = DataFactoryManagementClient(credentials, subscription_id)
 
     rg_name = "sdir-d-rg-risk"
@@ -41,7 +51,9 @@ def trigger_run():
         "Param2": "value2"
     }
 
-    adf_client.pipelines.create_run(rg_name, df_name, p_name)
+    foo = adf_client.pipelines.create_run(rg_name, df_name, p_name)
+
+    print(foo)
 
 
 if __name__ == '__main__':
