@@ -1,5 +1,10 @@
 from azure.mgmt.datafactory import DataFactoryManagementClient
 from azure.mgmt.resource.resources import ResourceManagementClient
+from azure.mgmt.datafactory.models import DatasetResource, AzureBlobDataset, \
+    DatasetReference, BlobSink, BlobSource, PipelineResource, CopyActivity, \
+    LinkedServiceResource, AzureStorageLinkedService, LinkedServiceReference
+
+import os
 
 # from azure.common.credentials import ServicePrincipalCredentials  # To login with service principal (appid and client secret) use this
 from azure.identity import InteractiveBrowserCredential
@@ -66,13 +71,85 @@ def trigger_run():
 
     p_name = "prepare_data"
 
-    # foo = adf_client.pipelines.create_run(rg_name, df_name, p_name)
+    doof = {
+        # 'indicators': '["callsToPortPerDistanceTraveled","portCalls","avgVelocity"]',
+        'call_sign': 'JXNC',
+    }
 
-    foo = get_resources_in_group(rg_name, credentials, subscription_id)
+    foo = adf_client.pipelines.create_run(rg_name, df_name, p_name, parameters=doof)
 
-    print(foo)
-    for thing in foo:
-        print(thing)
+    # https://sdirdstdataadfrisk00.blob.core.windows.net/sandbox/source/help_i_am_a_textfile.txt
+
+    connstring = ""
+
+    ls_name = 'storageLinkedService001'
+    ls_azure_storage = LinkedServiceResource(properties=AzureStorageLinkedService(connection_string=connstring))
+    ls = adf_client.linked_services.create_or_update(rg_name, df_name, ls_name, ls_azure_storage)
+    ds_ls = LinkedServiceReference(reference_name=ls_name)
+
+    source_set = create_dataset('sandbox', 'source', 'help_i_am_a_textfile.txt', ds_ls)
+    source_name = "foo"
+
+    source_output = adf_client.datasets.create_or_update(rg_name, df_name, source_name, source_set)
+
+    print(source_output)
+
+    sink_set = create_dataset('sandbox', 'sink', 'help_i_am_a_textfile.txt', ds_ls)
+    sink_name = "bar"
+
+    sink_output = adf_client.datasets.create_or_update(rg_name, df_name, sink_name, sink_set)
+
+    print(sink_output)
+
+    pipename, pipeobj = copy_results(source_name, sink_name)
+
+    factory_output = adf_client.pipelines.create_or_update(rg_name, df_name, pipename, pipeobj)
+
+    print(factory_output)
+
+    run_response = adf_client.pipelines.create_run(rg_name, df_name, pipename, parameters={})
+
+    print(run_response)
+
+    # foo = get_resources_in_group(rg_name, credentials, subscription_id)
+    #
+    # res_client = ResourceManagementClient(credentials, subscription_id)
+    #
+    #
+    #
+    # print(foo)
+    # for thing in foo:
+    #     print(thing)
+
+
+def create_dataset(container, folder_path, filename, linked_service=None):
+
+    blob_path = os.path.join(container, folder_path)
+    blob_filename = filename
+
+    ds_azure_blob = DatasetResource(properties=AzureBlobDataset(
+        linked_service_name=linked_service, folder_path=blob_path, file_name=blob_filename))
+
+    return ds_azure_blob  # must still be updated in client
+
+
+def copy_results(source_set_name, sink_set_name):
+    # Create a copy activity
+    act_name = 'copyResults'
+    blob_source = BlobSource()
+    blob_sink = BlobSink()
+    dsin_ref = DatasetReference(reference_name=source_set_name)
+    dsOut_ref = DatasetReference(reference_name=sink_set_name)
+    copy_activity = CopyActivity(name=act_name, inputs=[dsin_ref], outputs=[
+        dsOut_ref], source=blob_source, sink=blob_sink)
+
+    # Create a pipeline with the copy activity
+    pipeline_name = 'copyPipeline'
+    params_for_pipeline = {}
+    pipeline_object = PipelineResource(
+        activities=[copy_activity], parameters=params_for_pipeline)
+
+    return pipeline_name, pipeline_object
 
 
 if __name__ == '__main__':
