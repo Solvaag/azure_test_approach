@@ -1,0 +1,5 @@
+{
+  "call_sign": "JXNC",
+  "indicators": ["callsToPortPerDistanceTraveled","portCalls","avgVelocity"],
+  "pipeline_name": "prepare_data"
+}
