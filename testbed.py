@@ -138,7 +138,7 @@ def trigger_run():
 
     print(sink_output)
 
-    pipename, pipeobj = copy_results(source_name, sink_name)
+    p_name = "prepare_data"
 
     factory_output = adf_client.pipelines.create_or_update(RESOURCE_GROUP, DATA_FACTORY, pipename, pipeobj)
 
@@ -200,4 +200,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    trigger_run()
