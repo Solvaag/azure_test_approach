@@ -1,3 +1,5 @@
+import csv
+
 from azure.mgmt.datafactory import DataFactoryManagementClient
 from azure.mgmt.resource.resources import ResourceManagementClient
 from azure.mgmt.datafactory.models import DatasetResource, AzureBlobDataset, \
@@ -17,6 +19,7 @@ from azure.identity import InteractiveBrowserCredential
 import subprocess
 import json
 
+from boatlistings import get_really_fast_boats
 
 def developer_validation(file='creds.json'):
     """
@@ -37,7 +40,6 @@ def developer_validation(file='creds.json'):
 
 
 def load_configuration(file='parameters.json'):
-
     with open(file, 'r') as parameter_file:
         parameters = json.load(parameter_file)
 
@@ -64,33 +66,32 @@ def get_resources_in_group(resource_group, credentials, subscription_id):
     return resources
 
 
-def piperun_by_callsign(call_sign=None, pipeline_name=None):
-
+def piperun_by_callsign(parameters, pipeline_name=None):
     subscription_id, tenant_id = developer_validation()
 
     credentials = InteractiveBrowserCredential(tenant_id=tenant_id)
 
     adf_client = DataFactoryManagementClient(credentials, subscription_id)
 
-    parameters = {
-        'call_sign': call_sign
-    }
-
     run_response = adf_client.pipelines.create_run(RESOURCE_GROUP, DATA_FACTORY, pipeline_name, parameters=parameters)
 
     now = datetime.now()
+    in_progress = True
 
-    while True:
+    print("Beginning on set: \n {}".format(parameters))
+
+    while in_progress:
         time.sleep(30)
         runtime = datetime.now()
         duration = runtime - now
-        print("Duration {} seconds".format(duration.seconds))
+        print("\tDuration {} seconds".format(duration.seconds))
 
         pipeline_run = adf_client.pipeline_runs.get(RESOURCE_GROUP, DATA_FACTORY, run_response.run_id)
 
-        print("\n\tPipeline run status: {}".format(pipeline_run.status))
+        print("\tPipeline run status: {}".format(pipeline_run.status))
 
-
+        if pipeline_run.status != "InProgress":
+            in_progress = False
 
 
 def trigger_run():
@@ -160,7 +161,6 @@ def trigger_run():
 
 
 def create_dataset(container, folder_path, filename, linked_service=None):
-
     blob_path = os.path.join(container, folder_path)
     blob_filename = filename
 
@@ -191,13 +191,55 @@ def copy_results(source_set_name, sink_set_name):
 
 def main():
 
-    basecase = "LFJJ"
+    fast_boats = get_really_fast_boats()
+
+    print(fast_boats)
+
+    # callSign;company;vesselType
 
     pipeline = "risk_module"
 
-    piperun_by_callsign(basecase, pipeline)
+    with open('log.txt', 'a+') as log:
+
+        writer = csv.DictWriter(log, fieldnames=['call_sign', 'index', 'start', 'end', 'run_id'])
+        writer.writeheader()
+
+        for index, boat in enumerate(fast_boats[:50]):
+            print()
+            call_sign = boat['callSign']
+            company = boat['company']
+            vessel_type = boat['vesselType']
+            run_id = '{}_{}_sigve_run'.format(datetime.now().strftime("%Y_%m_%d_%H_%M"), call_sign)
+
+            parameters = {
+                'call_sign': call_sign,
+                'company': company,
+                'vessel_type': vessel_type,
+                'model_types': ["FireMaintain", "GroundingMaintain", "CrushMaintain", "CollisionMaintain"],
+                'run_id': run_id
+            }
+
+            start = datetime.now()
+
+            piperun_by_callsign(parameters, pipeline)
+
+            end = datetime.now()
+
+            row_packet = {
+                'call_sign': call_sign,
+                'index': index,
+                'start': start,
+                'end': end,
+                'run_id': run_id
+            }
+
+            writer.writerow(row_packet)
+
+
+
+
 
 
 
 if __name__ == '__main__':
-    trigger_run()
+    main()
