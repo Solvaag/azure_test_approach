@@ -66,10 +66,8 @@ def get_resources_in_group(resource_group, credentials, subscription_id):
     return resources
 
 
-def piperun_by_callsign(parameters, pipeline_name=None):
-    subscription_id, tenant_id = developer_validation()
+def piperun_by_callsign(parameters, credentials, subscription_id, pipeline_name=None):
 
-    credentials = InteractiveBrowserCredential(tenant_id=tenant_id)
 
     adf_client = DataFactoryManagementClient(credentials, subscription_id)
 
@@ -199,6 +197,10 @@ def main():
 
     pipeline = "risk_module"
 
+    subscription_id, tenant_id = developer_validation()
+
+    credentials = InteractiveBrowserCredential(tenant_id=tenant_id)
+
     with open('log.txt', 'a+') as log:
 
         writer = csv.DictWriter(log, fieldnames=['call_sign', 'index', 'start', 'end', 'run_id'])
@@ -221,7 +223,7 @@ def main():
 
             start = datetime.now()
 
-            piperun_by_callsign(parameters, pipeline)
+            piperun_by_callsign(parameters, credentials, subscription_id, pipeline)
 
             end = datetime.now()
 
