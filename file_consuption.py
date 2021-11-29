@@ -3,7 +3,7 @@ import os
 import csv
 
 
-WORK_DIR = "C:/Repos/sdir_data"
+WORK_DIR = "C:/Sync/OneDrive - Capgemini/Documents/Sdir/ny_data"
 
 example_file = "2021_11_10_15_30_LK3681_sigve_run.csv"
 
@@ -29,11 +29,11 @@ def collate_folder(dir):
 # FireMaintain,3.0000000000000004
 
 
-def read_file(file_path):
+def read_file(file_path, fieldnames=["RiskModel", "Score"]):
 
     with open(file_path, 'r') as resource:
 
-        reader = csv.DictReader(resource, fieldnames=["RiskModel", "Score"])
+        reader = csv.DictReader(resource, fieldnames)
         next(reader, None)
 
         return [x for x in reader]
@@ -59,7 +59,7 @@ def transpose_call_sign_scores(dir):
 
     data = consume_files(files)
 
-    fieldnames = ['call_sign', 'CollisionMaintain', 'CrushMaintain', 'GroundingMaintain', 'FireMaintain']
+    fieldnames = ['call_sign', "FireMaintain", "GroundingMaintain", "CrushMaintain", "CollisionMaintain", "CapsizingMaintain", "OverboardMaintain"]
 
     with open('output.csv', 'w') as output:
 

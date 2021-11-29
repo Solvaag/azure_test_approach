@@ -21,6 +21,7 @@ import json
 
 from boatlistings import get_really_fast_boats
 
+
 def developer_validation(file='creds.json'):
     """
     Creds.json was made by copy-pasting the subscription list from Azure CLI into a json file.
@@ -67,16 +68,20 @@ def get_resources_in_group(resource_group, credentials, subscription_id):
 
 
 def piperun_by_callsign(parameters, credentials, subscription_id, pipeline_name=None):
-
-
     adf_client = DataFactoryManagementClient(credentials, subscription_id)
 
     run_response = adf_client.pipelines.create_run(RESOURCE_GROUP, DATA_FACTORY, pipeline_name, parameters=parameters)
 
+    print("Beginning on set: \n {}".format(parameters))
+
+    track_runs(adf_client, run_response)
+
+    return run_response
+
+
+def track_runs(adf_client, run_response):
     now = datetime.now()
     in_progress = True
-
-    print("Beginning on set: \n {}".format(parameters))
 
     while in_progress:
         time.sleep(30)
@@ -90,6 +95,7 @@ def piperun_by_callsign(parameters, credentials, subscription_id, pipeline_name=
 
         if pipeline_run.status != "InProgress":
             in_progress = False
+
 
 
 def trigger_run():
@@ -188,10 +194,11 @@ def copy_results(source_set_name, sink_set_name):
 
 
 def main():
-
     fast_boats = get_really_fast_boats()
 
     print(fast_boats)
+
+    boat_count = 60 # 50 - 60
 
     # callSign;company;vesselType
 
@@ -201,12 +208,15 @@ def main():
 
     credentials = InteractiveBrowserCredential(tenant_id=tenant_id)
 
-    with open('log.txt', 'a+') as log:
+    run_responses = {}
 
+    with open('log.txt', 'a+') as log:
         writer = csv.DictWriter(log, fieldnames=['call_sign', 'index', 'start', 'end', 'run_id'])
         writer.writeheader()
 
-        for index, boat in enumerate(fast_boats[:50]):
+
+
+        for index, boat in enumerate(fast_boats[:boat_count]):
             print()
             call_sign = boat['callSign']
             company = boat['company']
@@ -217,13 +227,17 @@ def main():
                 'call_sign': call_sign,
                 'company': company,
                 'vessel_type': vessel_type,
-                'model_types': ["FireMaintain", "GroundingMaintain", "CrushMaintain", "CollisionMaintain"],
-                'run_id': run_id
+                'model_types': ["FireMaintain", "GroundingMaintain", "CrushMaintain", "CollisionMaintain", "CapsizingMaintain", "OverboardMaintain"],
+                'run_id': run_id,
+                'timespan_months': 36
             }
+
 
             start = datetime.now()
 
-            piperun_by_callsign(parameters, credentials, subscription_id, pipeline)
+            pipeline_run = piperun_by_callsign(parameters, credentials, subscription_id, pipeline)
+
+            run_responses[call_sign] = {'run_response': pipeline_run, 'run_id': run_id}
 
             end = datetime.now()
 
@@ -236,10 +250,6 @@ def main():
             }
 
             writer.writerow(row_packet)
-
-
-
-
 
 
 
