@@ -11,7 +11,7 @@ import os
 import time
 from datetime import datetime
 
-from sdir_config import RESOURCE_GROUP, DATA_FACTORY
+from configs.sdir_config import RESOURCE_GROUP, DATA_FACTORY
 
 # from azure.common.credentials import ServicePrincipalCredentials  # To login with service principal (appid and client secret) use this
 from azure.identity import InteractiveBrowserCredential
@@ -19,7 +19,7 @@ from azure.identity import InteractiveBrowserCredential
 import subprocess
 import json
 
-from boatlistings import get_really_fast_boats
+from reports.boatlistings import get_really_fast_boats
 
 
 def developer_validation(file='creds.json'):
@@ -210,7 +210,7 @@ def main():
 
     run_responses = {}
 
-    with open('log.txt', 'a+') as log:
+    with open('outputs/log.txt', 'a+') as log:
         writer = csv.DictWriter(log, fieldnames=['call_sign', 'index', 'start', 'end', 'run_id'])
         writer.writeheader()
 

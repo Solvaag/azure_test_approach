@@ -61,7 +61,7 @@ def transpose_call_sign_scores(dir):
 
     fieldnames = ['call_sign', "FireMaintain", "GroundingMaintain", "CrushMaintain", "CollisionMaintain", "CapsizingMaintain", "OverboardMaintain"]
 
-    with open('output.csv', 'w') as output:
+    with open('../outputs/output.csv', 'w') as output:
 
         writer = csv.DictWriter(output, fieldnames=fieldnames)
 

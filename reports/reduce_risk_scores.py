@@ -2,7 +2,7 @@
 
 import csv
 import statistics
-from file_consuption import read_file
+from reports.file_consuption import read_file
 
 
 SOURCE = "C:/Users/ssolvaag/PycharmProjects/azure_test_approach/output.csv"
@@ -59,7 +59,7 @@ if __name__ == '__main__':
 
     print(results)
 
-    with open('scores.csv', 'w') as file:
+    with open('../outputs/scores.csv', 'w') as file:
 
         writer = csv.DictWriter(file, fieldnames=['RiskModel', 'Mean', 'StandardDeviation'])
         writer.writeheader()
