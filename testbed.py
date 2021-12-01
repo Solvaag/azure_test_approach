@@ -1,5 +1,3 @@
-import csv
-
 from azure.mgmt.datafactory import DataFactoryManagementClient
 from azure.mgmt.resource.resources import ResourceManagementClient
 from azure.mgmt.datafactory.models import DatasetResource, AzureBlobDataset, \
@@ -8,18 +6,13 @@ from azure.mgmt.datafactory.models import DatasetResource, AzureBlobDataset, \
 
 import os
 
-import time
-from datetime import datetime
-
 from configs.sdir_config import RESOURCE_GROUP, DATA_FACTORY
 
-# from azure.common.credentials import ServicePrincipalCredentials  # To login with service principal (appid and client secret) use this
 from azure.identity import InteractiveBrowserCredential
 
 import subprocess
 import json
 
-from reports.boatlistings import get_really_fast_boats
 
 
 def developer_validation(file='creds.json'):
@@ -65,10 +58,6 @@ def get_resources_in_group(resource_group, credentials, subscription_id):
     resources = res_client.resources.list_by_resource_group(resource_group)
 
     return resources
-
-
-
-
 
 
 def trigger_run():
@@ -164,5 +153,24 @@ def copy_results(source_set_name, sink_set_name):
         activities=[copy_activity], parameters=params_for_pipeline)
 
     return pipeline_name, pipeline_object
+
+
+def set_up_adf_client():
+    subscription_id, tenant_id = developer_validation()
+
+    credentials = InteractiveBrowserCredential(tenant_id=tenant_id)
+
+    adf_client = DataFactoryManagementClient(credentials, subscription_id)
+
+    return adf_client
+
+
+def set_up_temp_pipeline(activities, parameters, test_label, adf_client):
+    pipeline_object = PipelineResource(
+        activities=activities, parameters=parameters)
+
+    factory_output = adf_client.pipelines.create_or_update(RESOURCE_GROUP, DATA_FACTORY, test_label, pipeline_object)
+
+    return {'object': pipeline_object, 'factory_output': factory_output, 'test_label': test_label}
 
 
