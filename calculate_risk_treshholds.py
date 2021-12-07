@@ -1,17 +1,16 @@
 import csv
-
-from azure.mgmt.datafactory import DataFactoryManagementClient
-
 import time
 from datetime import datetime
 
 from configs.sdir_config import RESOURCE_GROUP, DATA_FACTORY
 
+from azure.mgmt.datafactory import DataFactoryManagementClient
 from azure.identity import InteractiveBrowserCredential
 
 from reports.boatlistings import get_really_fast_boats
 
 from testbed import developer_validation
+
 
 def piperun_by_callsign(parameters, credentials, subscription_id, pipeline_name=None):
     adf_client = DataFactoryManagementClient(credentials, subscription_id)
@@ -28,6 +27,7 @@ def piperun_by_callsign(parameters, credentials, subscription_id, pipeline_name=
 def track_runs(adf_client, run_response):
     now = datetime.now()
     in_progress = True
+    pipeline_run = None
 
     while in_progress:
         time.sleep(30)
@@ -42,13 +42,14 @@ def track_runs(adf_client, run_response):
         if pipeline_run.status != "InProgress":
             in_progress = False
 
+    return pipeline_run.status
 
 def main():
     fast_boats = get_really_fast_boats()
 
     print(fast_boats)
 
-    boat_count = 60 # 50 - 60
+    boat_count = 60  # 50 - 60
 
     # callSign;company;vesselType
 
@@ -75,11 +76,11 @@ def main():
                 'call_sign': call_sign,
                 'company': company,
                 'vessel_type': vessel_type,
-                'model_types': ["FireMaintain", "GroundingMaintain", "CrushMaintain", "CollisionMaintain", "CapsizingMaintain", "OverboardMaintain"],
+                'model_types': ["FireMaintain", "GroundingMaintain", "CrushMaintain", "CollisionMaintain",
+                                "CapsizingMaintain", "OverboardMaintain"],
                 'run_id': run_id,
                 'timespan_months': 36
             }
-
 
             start = datetime.now()
 
@@ -98,7 +99,6 @@ def main():
             }
 
             writer.writerow(row_packet)
-
 
 
 if __name__ == '__main__':

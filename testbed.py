@@ -12,7 +12,7 @@ from azure.identity import InteractiveBrowserCredential
 
 import subprocess
 import json
-
+import time
 
 
 def developer_validation(file='creds.json'):
@@ -63,14 +63,6 @@ def get_resources_in_group(resource_group, credentials, subscription_id):
 def trigger_run():
     subscription_id, tenant_id = developer_validation()
 
-    # subs = get_subscriptions()
-
-    # subscription = get_specific_subscription(subscription_id, subs)
-
-    # credentials = ServicePrincipalCredentials(client_id='appid',
-    #                                           client_secret='client secret',
-    #                                           tenant_id='tenantid')  # To login with serv ppal
-
     credentials = InteractiveBrowserCredential(tenant_id=tenant_id)
 
     adf_client = DataFactoryManagementClient(credentials, subscription_id)
@@ -81,8 +73,6 @@ def trigger_run():
     }
 
     # foo = adf_client.pipelines.create_run(rg_name, df_name, p_name, parameters=doof)
-
-    # https://sdirdstdataadfrisk00.blob.core.windows.net/sandbox/source/help_i_am_a_textfile.txt
 
     connstring = ""
 
@@ -114,16 +104,6 @@ def trigger_run():
     run_response = adf_client.pipelines.create_run(RESOURCE_GROUP, DATA_FACTORY, pipename, parameters={})
 
     print(run_response)
-
-    # foo = get_resources_in_group(rg_name, credentials, subscription_id)
-    #
-    # res_client = ResourceManagementClient(credentials, subscription_id)
-    #
-    #
-    #
-    # print(foo)
-    # for thing in foo:
-    #     print(thing)
 
 
 def create_dataset(container, folder_path, filename, linked_service=None):
@@ -174,3 +154,27 @@ def set_up_temp_pipeline(activities, parameters, test_label, adf_client):
     return {'object': pipeline_object, 'factory_output': factory_output, 'test_label': test_label}
 
 
+def test_pipeline(pipeline, parameters):
+
+    adf_client = set_up_adf_client()
+
+    run_response = adf_client.pipelines.create_run(RESOURCE_GROUP, DATA_FACTORY, pipeline, parameters=parameters)
+
+    result = track_run(adf_client, run_response)
+
+    # handle assertion logic here
+
+
+def track_run(adf_client, run_response):
+    in_progress = True
+    pipeline_run = None
+
+    while in_progress:
+        time.sleep(30)
+
+        pipeline_run = adf_client.pipeline_runs.get(RESOURCE_GROUP, DATA_FACTORY, run_response.run_id)
+
+        if pipeline_run.status != "InProgress":
+            in_progress = False
+
+    return pipeline_run.status
