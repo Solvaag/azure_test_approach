@@ -9,6 +9,8 @@ from testbed import developer_validation
 
 from configs.sdir_config import RESOURCE_GROUP, DATA_FACTORY
 
+import time
+
 def set_up_adf_client():
     subscription_id, tenant_id = developer_validation()
 
@@ -38,6 +40,9 @@ def test_pipeline(pipeline, parameters):
 
     # handle assertion logic here
 
+    return result
+
+
 
 def track_run(adf_client, run_response):
     in_progress = True
@@ -52,3 +57,24 @@ def track_run(adf_client, run_response):
             in_progress = False
 
     return pipeline_run.status
+
+
+if __name__ == '__main__':
+
+    # LK3681,155188,Hurtigbåt
+
+    pipeline = "risk_module"
+
+    parameters = {
+        'call_sign': 'LK3681',
+        'company': '155188',
+        'vessel_type': 'Hurtigbåt',
+        'model_types': ["FireMaintain", "GroundingMaintain", "CrushMaintain", "CollisionMaintain",
+                        "CapsizingMaintain", "OverboardMaintain"],
+        'run_id': "sigve_test_01",
+        'timespan_months': 36
+    }
+
+    pack = test_pipeline(pipeline, parameters)
+
+    print(pack)

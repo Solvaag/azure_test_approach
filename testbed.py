@@ -14,23 +14,7 @@ import subprocess
 import json
 import time
 
-
-def developer_validation(file='creds.json'):
-    """
-    Creds.json was made by copy-pasting the subscription list from Azure CLI into a json file.
-
-    Use the get_subscriptions() function to get a complete list of authorized subs.
-
-    This function should only be used for development.
-
-    :param file:
-    :return: str subscription_id, str tenant_id
-    """
-
-    with open(file, 'r') as creds:
-        data = json.load(creds)
-
-    return data["id"], data["tenantId"]
+from auth.authentication import developer_validation
 
 
 def load_configuration(file='parameters.json'):
